@@ -128,10 +128,11 @@ services:
       postgres: { condition: service_healthy }
       opensearch-init: { condition: service_completed_successfully }
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:6080/login.jsp || exit 1"]
+      # the image has no curl; a TCP connect to 6080 plus a login page fetch through bash
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/6080 && printf \"GET /login.jsp HTTP/1.0\\r\\n\\r\\n\" >&3 && head -1 <&3 | grep -q 200'"]
       interval: 15s
       timeout: 5s
-      retries: 60
+      retries: 80
 
   trino:
     image: trinodb/trino:${TRINO_VERSION:-483}
@@ -147,7 +148,7 @@ services:
     depends_on:
       ranger-admin: { condition: service_healthy }
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/v1/info | grep -q '\"starting\":false'"]
+      test: ["CMD", "/usr/lib/trino/bin/health-check"]
       interval: 10s
       timeout: 5s
       retries: 30
@@ -165,11 +166,6 @@ services:
     depends_on:
       opensearch-init: { condition: service_completed_successfully }
       trino: { condition: service_started }
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:2020/api/v1/health || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 10
 
 volumes:
   postgres-data:

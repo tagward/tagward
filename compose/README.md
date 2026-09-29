@@ -33,6 +33,15 @@ PostgreSQL flavour of the upstream multi-stage build. If it is not, the PostgreS
 driver is missing at `/usr/share/java/postgresql.jar` and `setup.sh` fails on the
 first line; the fix is our own image, which ADR-008 plans anyway.
 
+## Smoke test in CI
+
+The `compose-smoke` workflow brings this stack up on a GitHub runner and runs
+`smoke.sh`, which automates checks M0.2 to M0.6: Ranger admin on OpenSearch audit,
+the deny and allow queries, audit files, the OpenSearch index and Ranger admin's
+audit screen, OpenMetadata's version endpoint, and a Keycloak token with the
+groups claim. Logs of every service are uploaded as an artifact on every run.
+Run it locally after `docker compose up -d --wait` with `bash smoke.sh`.
+
 ## Run
 
 ```bash
@@ -76,4 +85,5 @@ config/ranger/entrypoint.sh        setup once, start admin, no dev services
 config/trino/*.properties          coordinator, Ranger access control, tpch catalog
 config/trino/ranger/*.xml          plugin security and file audit configuration (Spec 05, ADR-010)
 config/fluent-bit/*.conf           tail audit files, rename fields, write to OpenSearch
+smoke.sh                           automated M0 checks, used by the compose-smoke workflow
 ```

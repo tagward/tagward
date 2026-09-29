@@ -3,10 +3,9 @@
 #   cp .env.example .env
 #   docker compose up -d
 #
-# Status: NOT YET VERIFIED. This file was written against the upstream images'
-# documentation and has not been run end to end. The M0 issues in the master
-# repository track the verification. Expect the Ranger service in particular to
-# need work: the upstream image is a developer image (ADR-008).
+# Status: NOT YET RUN END TO END. Written against the upstream images' sources at the
+# pinned tags (entrypoint, install.properties path, audit destinations), syntax-checked
+# with `docker compose config`. The M0 issues in the master repository track the run.
 
 name: tagward
 
@@ -25,7 +24,7 @@ services:
       retries: 20
 
   opensearch:
-    image: opensearchproject/opensearch:${OPENSEARCH_VERSION:-2.19.2}
+    image: opensearchproject/opensearch:${OPENSEARCH_VERSION:-2.19.6}
     environment:
       discovery.type: single-node
       DISABLE_SECURITY_PLUGIN: "true"     # laptop only; the chart enables it
@@ -43,7 +42,7 @@ services:
       retries: 30
 
   opensearch-init:
-    image: curlimages/curl:8.12.1
+    image: curlimages/curl:${CURL_VERSION:-8.22.0}
     depends_on:
       opensearch: { condition: service_healthy }
     volumes:
@@ -54,7 +53,7 @@ services:
     restart: "no"
 
   keycloak:
-    image: quay.io/keycloak/keycloak:${KEYCLOAK_VERSION:-26.3}
+    image: quay.io/keycloak/keycloak:${KEYCLOAK_VERSION:-26.7.4}
     command: ["start-dev", "--import-realm"]
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
@@ -73,7 +72,7 @@ services:
       postgres: { condition: service_healthy }
 
   openmetadata-migrate:
-    image: openmetadata/server:${OPENMETADATA_VERSION:-1.9.7}
+    image: openmetadata/server:${OPENMETADATA_VERSION:-1.10.14}
     command: ["./bootstrap/openmetadata-ops.sh", "migrate"]
     environment: &om-env
       DB_DRIVER_CLASS: org.postgresql.Driver
@@ -96,7 +95,7 @@ services:
     restart: "no"
 
   openmetadata:
-    image: openmetadata/server:${OPENMETADATA_VERSION:-1.9.7}
+    image: openmetadata/server:${OPENMETADATA_VERSION:-1.10.14}
     environment:
       <<: *om-env
       SERVER_PORT: "8585"
@@ -112,23 +111,27 @@ services:
       retries: 40
 
   ranger-admin:
-    # Upstream developer image, used only until images/ranger-admin exists (ADR-008).
-    image: apache/ranger:${RANGER_VERSION:-2.8.0}
+    # Upstream developer image (ADR-008), driven by our install.properties and a minimal
+    # entrypoint. 2.9.0 is the first release whose admin reads audits from OpenSearch.
+    image: apache/ranger:${RANGER_VERSION:-2.9.0}
     hostname: ranger-admin
+    entrypoint: ["/bin/bash", "/home/ranger/scripts/tagward-entrypoint.sh"]
     environment:
-      RANGER_VERSION: ${RANGER_VERSION:-2.8.0}
+      RANGER_HOME: /opt/ranger
     volumes:
-      - ./config/ranger/install.properties:/home/ranger/dist/ranger-admin-install.properties:ro
+      - ./config/ranger/install.properties:/opt/ranger/admin/install.properties:ro
+      - ./config/ranger/entrypoint.sh:/home/ranger/scripts/tagward-entrypoint.sh:ro
+      - ranger-admin-state:/opt/ranger/admin/ews/webapp/WEB-INF/classes/conf
     ports:
       - "6080:6080"
     depends_on:
       postgres: { condition: service_healthy }
-      opensearch: { condition: service_healthy }
+      opensearch-init: { condition: service_completed_successfully }
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:6080/login.jsp || exit 1"]
       interval: 15s
       timeout: 5s
-      retries: 40
+      retries: 60
 
   trino:
     image: trinodb/trino:${TRINO_VERSION:-483}
@@ -140,6 +143,7 @@ services:
       - ./config/trino/catalog/tpch.properties:/etc/trino/catalog/tpch.properties:ro
       - ./config/trino/ranger:/etc/trino/ranger:ro
       - trino-ranger:/tmp/ranger
+      - ranger-audit:/var/log/ranger
     depends_on:
       ranger-admin: { condition: service_healthy }
     healthcheck:
@@ -148,7 +152,28 @@ services:
       timeout: 5s
       retries: 30
 
+  fluent-bit:
+    # Ships the plugin's JSON audit files to OpenSearch (ADR-010, Spec 05).
+    image: fluent/fluent-bit:${FLUENT_BIT_VERSION:-4.2.8}
+    environment:
+      OPENSEARCH_HOST: opensearch
+      OPENSEARCH_PORT: "9200"
+    volumes:
+      - ./config/fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - ./config/fluent-bit/parsers.conf:/fluent-bit/etc/parsers.conf:ro
+      - ranger-audit:/var/log/ranger
+    depends_on:
+      opensearch-init: { condition: service_completed_successfully }
+      trino: { condition: service_started }
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:2020/api/v1/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
 volumes:
   postgres-data:
   opensearch-data:
   trino-ranger:
+  ranger-audit:
+  ranger-admin-state:

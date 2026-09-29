@@ -1,37 +1,44 @@
 {
   "index_patterns": ["ranger_audits*"],
+  "priority": 100,
   "template": {
     "settings": {
       "number_of_shards": 1,
       "number_of_replicas": 0
     },
     "mappings": {
+      "dynamic": true,
       "properties": {
-        "evtTime": { "type": "date" },
+        "id": { "type": "keyword" },
+        "evtTime": { "type": "date", "format": "yyyy-MM-dd HH:mm:ss.SSS||strict_date_optional_time||epoch_millis" },
         "reqUser": { "type": "keyword" },
         "access": { "type": "keyword" },
+        "action": { "type": "keyword" },
         "resource": { "type": "keyword" },
         "resType": { "type": "keyword" },
         "result": { "type": "integer" },
+        "reason": { "type": "text" },
         "policy": { "type": "long" },
         "policyVersion": { "type": "long" },
         "enforcer": { "type": "keyword" },
+        "agent": { "type": "keyword" },
+        "agentHost": { "type": "keyword" },
         "repo": { "type": "keyword" },
         "repoType": { "type": "integer" },
-        "cliIP": { "type": "ip" },
+        "sess": { "type": "keyword" },
+        "cliType": { "type": "keyword" },
+        "cliIP": { "type": "keyword" },
+        "logType": { "type": "keyword" },
         "reqData": { "type": "text", "index": false },
         "tags": { "type": "keyword" },
-        "cluster_name": { "type": "keyword" },
+        "datasets": { "type": "keyword" },
+        "projects": { "type": "keyword" },
+        "cluster": { "type": "keyword" },
         "zoneName": { "type": "keyword" },
-        "agentHost": { "type": "keyword" },
+        "seq_num": { "type": "long" },
         "event_count": { "type": "long" },
         "event_dur_ms": { "type": "long" },
-        "action": { "type": "keyword" },
-        "sess": { "type": "keyword" },
-        "agent": { "type": "keyword" },
-        "id": { "type": "keyword" },
-        "seq_num": { "type": "long" },
-        "datatype": { "type": "keyword" }
+        "additional_info": { "type": "text", "index": false }
       }
     }
   }

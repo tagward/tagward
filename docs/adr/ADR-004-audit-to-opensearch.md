@@ -1,6 +1,7 @@
 # ADR-004 · Ranger audit goes to OpenSearch, no Solr
 
-Status: accepted
+Status: accepted. The primary path below is amended by ADR-010, which found that no
+plugin-side OpenSearch destination exists in the pinned Ranger versions.
 
 ## Context
 

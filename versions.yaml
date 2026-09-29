@@ -16,9 +16,10 @@ components:
     chart: trino/trino
     chart_version: TBD
     notes: >
-      Ships the Ranger and OPA access-control plugins in-repo. The Ranger client
-      library bundled in Trino's plugin decides which audit destinations exist on
-      the query path. Verify the OpenSearch destination is present in this build.
+      Ships the Ranger and OPA access-control plugins in-repo. Bundles Ranger 2.8.0
+      client libraries with Elasticsearch, HDFS, log4j, Solr, Kafka and CloudWatch
+      audit destinations and no OpenSearch one, verified in plugin/trino-ranger/pom.xml
+      at tag 483. Audit therefore goes through files and Fluent Bit (ADR-010).
     status: proposed
 
   ranger:
@@ -33,7 +34,7 @@ components:
     status: proposed
 
   openmetadata:
-    version: "1.10.x"
+    version: "1.10.14"
     image: openmetadata/server
     ingestion_image: openmetadata/ingestion
     chart: open-metadata/openmetadata
@@ -44,13 +45,13 @@ components:
     status: proposed
 
   keycloak:
-    version: "26.x"
+    version: "26.7.4"
     image: quay.io/keycloak/keycloak
     deploy: keycloak-operator
     status: proposed
 
   opensearch:
-    version: "2.x"
+    version: "2.19.6"
     image: opensearchproject/opensearch
     chart: opensearch/opensearch
     notes: One cluster, two index families - OpenMetadata search and Ranger audit.
@@ -60,13 +61,21 @@ components:
     version: "16"
     image: postgres
     deploy: cloudnative-pg
-    notes: Three databases - openmetadata, ranger, keycloak. Never Bitnami.
+    notes: >
+      Three databases - openmetadata, ranger, keycloak. Never Bitnami. Image tags
+      for every component above were checked against Docker Hub on 2026-09-29.
     status: proposed
 
   fluent-bit:
-    version: "3.x"
+    version: "4.2.8"
     image: fluent/fluent-bit
-    notes: Only used by the fallback audit path.
+    notes: Ships the Trino plugin's audit files to OpenSearch (ADR-010).
+    status: proposed
+
+  curl:
+    version: "8.22.0"
+    image: curlimages/curl
+    notes: Init container that installs the OpenSearch index template.
     status: proposed
 
   controller:

@@ -96,6 +96,7 @@ nav:
       - adr/ADR-007-controller-in-java.md
       - adr/ADR-008-own-ranger-images.md
       - adr/ADR-009-fail-safe-defaults.md
+      - adr/ADR-010-plugin-audit-through-files.md
 
 extra:
   social:

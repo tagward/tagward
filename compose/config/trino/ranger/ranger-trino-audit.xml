@@ -1,37 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Spec 05, primary path: the plugin writes audit directly to OpenSearch. No Solr. -->
+<!--
+  Spec 05 / ADR-010. The Ranger 2.8.0 client bundled in Trino 483 has no OpenSearch
+  destination, so the plugin writes JSON lines to a local volume through the HDFS
+  destination (file:// URI) and the Fluent Bit sidecar ships them to OpenSearch.
+-->
 <configuration>
   <property>
     <name>xasecure.audit.is.enabled</name>
     <value>true</value>
   </property>
   <property>
-    <name>xasecure.audit.destination.opensearch</name>
+    <name>xasecure.audit.destination.hdfs</name>
     <value>true</value>
   </property>
   <property>
-    <name>xasecure.audit.destination.opensearch.urls</name>
-    <value>opensearch</value>
+    <name>xasecure.audit.destination.hdfs.dir</name>
+    <value>file:///var/log/ranger/audit</value>
   </property>
   <property>
-    <name>xasecure.audit.destination.opensearch.port</name>
-    <value>9200</value>
+    <name>xasecure.audit.destination.hdfs.subdir</name>
+    <value>%app-type%/%time:yyyyMMdd%</value>
   </property>
   <property>
-    <name>xasecure.audit.destination.opensearch.protocol</name>
-    <value>http</value>
+    <name>xasecure.audit.destination.hdfs.filename.format</name>
+    <value>%app-type%_ranger_audit_%hostname%.log</value>
   </property>
   <property>
-    <name>xasecure.audit.destination.opensearch.index</name>
-    <value>ranger_audits</value>
+    <name>xasecure.audit.destination.hdfs.file.rollover.sec</name>
+    <value>300</value>
   </property>
   <property>
-    <name>xasecure.audit.destination.opensearch.batch.filespool.enable</name>
+    <name>xasecure.audit.destination.hdfs.batch.filespool.enable</name>
     <value>true</value>
   </property>
   <property>
-    <name>xasecure.audit.destination.opensearch.batch.filespool.dir</name>
-    <value>/tmp/ranger/audit/spool</value>
+    <name>xasecure.audit.destination.hdfs.batch.filespool.dir</name>
+    <value>/var/log/ranger/spool</value>
+  </property>
+  <property>
+    <name>xasecure.audit.destination.solr</name>
+    <value>false</value>
+  </property>
+  <property>
+    <name>xasecure.audit.destination.elasticsearch</name>
+    <value>false</value>
   </property>
   <property>
     <name>xasecure.audit.provider.summary.enabled</name>

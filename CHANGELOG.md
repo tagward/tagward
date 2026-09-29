@@ -8,6 +8,12 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions fo
 
 ### Added
 
+- ADR-010: plugin audit reaches OpenSearch through files and Fluent Bit, after
+  verifying that Trino 483 bundles Ranger 2.8.0 without an OpenSearch destination
+  and that Ranger admin reads audits from OpenSearch only from 2.9.0.
+- Compose stack for M0 with Ranger 2.9.0, a minimal Ranger entrypoint, a Fluent Bit
+  audit sidecar, and image tags verified against their registries.
+- Documentation site on GitHub Pages.
 - Vision, architecture, bill of materials and repository layout.
 - Nine architecture decision records, ADR-001 to ADR-009.
 - Nine specifications: controller, policy repository format, Ranger compilation,

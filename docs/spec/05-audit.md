@@ -3,44 +3,64 @@
 Ranger plugins write audit from the enforcing process. In this stack that is the
 Trino coordinator. No Solr, no ZooKeeper. ADR-004.
 
-## Primary path: plugin → OpenSearch
+## What the pinned versions actually support
 
-Trino side, `ranger-trino-audit.xml` mounted by the chart:
+Verified against the upstream sources of the pinned versions (ADR-010):
+
+| Fact | Source |
+|---|---|
+| Trino 483 bundles Ranger 2.8.0 client libraries | `plugin/trino-ranger/pom.xml` at tag 483 |
+| Those libraries ship Elasticsearch, HDFS, log4j, Solr, Kafka and CloudWatch destinations, no OpenSearch destination | `agents-audit/pom.xml` at `release-ranger-2.8.0` and `release-ranger-2.9.0` |
+| Ranger admin reads audits from OpenSearch from 2.9.0 | `security-admin/scripts/setup.sh`, `audit_store=opensearch` and `ranger.audit.opensearch.*` |
+| File audit events use the `AuthzAuditEvent` field names and dates as `yyyy-MM-dd HH:mm:ss.SSS` | `agents-audit/core/.../AuthzAuditEvent.java`, `MiscUtil.java` |
+| Index documents rename `cluster_name`, `zone_name`, `policy_version` to `cluster`, `zoneName`, `policyVersion` | `agents-audit/dest-es/.../ElasticSearchAuditDestination.java` |
+
+## Path in use: plugin → local files → Fluent Bit → OpenSearch
+
+Trino side, `ranger-trino-audit.xml` mounted by the chart and by compose:
 
 | Property | Value |
-| --- | --- |
+|---|---|
 | `xasecure.audit.is.enabled` | `true` |
-| `xasecure.audit.destination.opensearch` | `true` |
-| `xasecure.audit.destination.opensearch.urls` | OpenSearch service host |
-| `xasecure.audit.destination.opensearch.port` | 9200 |
-| `xasecure.audit.destination.opensearch.protocol` | https |
-| `xasecure.audit.destination.opensearch.index` | `ranger_audits` |
-| `xasecure.audit.destination.opensearch.user` / `password` | from secret |
+| `xasecure.audit.destination.hdfs` | `true` |
+| `xasecure.audit.destination.hdfs.dir` | `file:///var/log/ranger/audit` |
+| `xasecure.audit.destination.hdfs.subdir` | `%app-type%/%time:yyyyMMdd%` |
+| `xasecure.audit.destination.hdfs.filename.format` | `%app-type%_ranger_audit_%hostname%.log` |
+| `xasecure.audit.destination.hdfs.file.rollover.sec` | `300` |
+| `xasecure.audit.destination.hdfs.batch.filespool.enable` | `true` |
+| `xasecure.audit.destination.hdfs.batch.filespool.dir` | `/var/log/ranger/spool` |
 | `xasecure.audit.provider.summary.enabled` | `true` |
-| local spool | `xasecure.audit.destination.opensearch.batch.filespool.enable=true`, directory on an emptyDir volume |
 
-Ranger admin side: audit source type OpenSearch, same index, read-only credentials.
+The HDFS destination accepts `file://` and writes one JSON object per line.
 
-Verification, first task of M1: run a denied and an allowed query in Trino, see
-both rows in Ranger admin's audit screen, on the pinned Trino and Ranger versions.
-Check that the destination class exists in the Ranger client library bundled in
-Trino's plugin jar. If TLS to OpenSearch fails, the known upstream gap, terminate
-TLS at an in-cluster proxy in front of OpenSearch for the audit path.
+Fluent Bit sidecar, sharing the volume:
 
-## Fallback path: plugin → file → Fluent Bit → OpenSearch
+- `tail` input on `/var/log/ranger/audit/**/*.log`, JSON parser, database file on the
+  volume so restarts do not re-ship.
+- `modify` filter renaming `cluster_name` → `cluster`, `zone_name` → `zoneName`,
+  `policy_version` → `policyVersion`.
+- `opensearch` output to the `ranger_audits` index, `Suppress_Type_Name On`,
+  `Replace_Dots Off`, `Generate_ID Off` so the document id stays Ranger's `id`
+  through `Id_Key id`.
 
-Used when the primary is unreliable on a pinned version.
+Ranger admin side, `install.properties`: `audit_store=opensearch`,
+`audit_opensearch_urls`, `audit_opensearch_port`, `audit_opensearch_protocol`,
+`audit_opensearch_index=ranger_audits`, `audit_opensearch_bootstrap_enabled=false`.
+Ranger admin 2.9.0 or newer.
 
-- `xasecure.audit.destination.log4j=true` with a JSON layout to a file on an
-  emptyDir volume shared with a Fluent Bit sidecar.
-- Fluent Bit tails, parses JSON, writes to `ranger_audits` with the same field
-  names. The index template below makes both paths produce identical documents.
-- Ranger admin reads the same index, unchanged.
+## Direct path, when upstream allows it
+
+The day a Trino release bundles a Ranger client with an OpenSearch destination, the
+plugin writes directly with `xasecure.audit.destination.opensearch.*` and the
+sidecar is removed. The index format does not change.
 
 ## Index template
 
 Owned in `compose/config/opensearch/ranger-audits-template.json` and installed by
-the chart's init job. Fields per Ranger's `AuthzAuditEvent`: `evtTime`, `reqUser`,
+the chart's init job and by the compose `opensearch-init` service, before Ranger
+admin or Fluent Bit start. Ranger admin's own bootstrap is disabled so the two do
+not fight over the mapping. `evtTime` accepts `yyyy-MM-dd HH:mm:ss.SSS`,
+ISO 8601 and epoch milliseconds. Fields per Ranger's `AuthzAuditEvent`: `evtTime`, `reqUser`,
 `access`, `resource`, `resType`, `result`, `policy`, `enforcer`, `repo`,
 `cliIP`, `reqData` (query text), `tags`, `cluster_name`, `zoneName`,
 `policyVersion`, `event_count`, `event_dur_ms`, `datatype`. Index lifecycle:

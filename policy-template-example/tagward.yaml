@@ -1,0 +1,18 @@
+spec: 1
+controller:
+  namespace: tw
+  resyncMinutes: 10
+  services:
+    lakehouse-om: lakehouse          # OpenMetadata service name → Trino catalog
+  environments:
+    demo:
+      openmetadata: http://openmetadata:8585
+      ranger: http://ranger-admin:6080
+      rangerService: trino-demo
+      rangerTagService: trino-demo-tags
+      trino: jdbc:trino://trino:8443
+      keycloak: http://keycloak:8080/realms/data
+      trinoCluster: demo
+defaults:
+  quarantineNewColumns: true
+  expiryKeepsEnforcing: true

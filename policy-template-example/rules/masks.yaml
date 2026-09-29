@@ -1,0 +1,18 @@
+spec: 1
+kind: Masks
+masks:
+  hash:
+    ranger: MASK_HASH
+    types: [varchar, char]
+  redact:
+    ranger: MASK
+    types: [varchar, char]
+  last4:
+    ranger: MASK_SHOW_LAST_4
+    types: [varchar, char]
+  nullify:
+    ranger: MASK_NULL
+    types: ["*"]
+  year-only:
+    ranger: MASK_DATE_SHOW_YEAR
+    types: [date, timestamp]

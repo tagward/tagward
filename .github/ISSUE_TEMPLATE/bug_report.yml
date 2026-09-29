@@ -1,0 +1,30 @@
+name: Bug report
+description: Something in the distribution, a chart, an image or the compose stack does not behave as specified.
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Distribution version
+      description: The `distribution.version` in `versions.yaml`, or the tag you installed.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [chart, image, compose, documentation, versions.yaml, other]
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what you got. Logs in a code block.
+    validations:
+      required: true
+  - type: textarea
+    id: spec
+    attributes:
+      label: Which specification or ADR says otherwise
+      description: Link to the section in `docs/spec/` or `docs/adr/` if you can.

@@ -1,0 +1,19 @@
+spec: 1
+kind: Intent
+id: pii-default
+description: Direct identifiers are visible in clear only to the privacy office.
+match:
+  tags: [PII.Email, PII.Phone, PII.NationalId]
+  state: Confirmed
+sensitive: true
+subjects:
+  - name: privacy-office
+    effect: allow
+  - name: analysts
+    effect: mask
+    mask: hash
+  - name: everyone
+    effect: deny
+review:
+  everyDays: 180
+  owner: privacy-office

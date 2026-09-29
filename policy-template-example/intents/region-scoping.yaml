@@ -1,0 +1,14 @@
+spec: 1
+kind: Intent
+id: region-scoping
+description: Regional analysts see rows of their own region only.
+match:
+  tags: [Governance.RegionScoped]
+  state: Confirmed
+subjects:
+  - name: regional-analysts
+    effect: filter
+    filter: "region = '${USER.region}'"
+    requires: [column:region]
+  - name: global-analysts
+    effect: allow

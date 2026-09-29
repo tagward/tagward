@@ -1,0 +1,82 @@
+# The single source of truth for every pinned version in the distribution.
+# Charts, compose files and CI read this file. Nothing else may hardcode a version.
+#
+# status: proposed  = chosen on paper, not yet proven in the compose stack
+#         verified  = the compose stack and conformance suite passed on this exact combination
+#         pinned    = released
+
+distribution:
+  version: 0.1.0-dev
+  status: proposed
+
+components:
+  trino:
+    version: "483"
+    image: trinodb/trino
+    chart: trino/trino
+    chart_version: TBD
+    notes: >
+      Ships the Ranger and OPA access-control plugins in-repo. The Ranger client
+      library bundled in Trino's plugin decides which audit destinations exist on
+      the query path. Verify the OpenSearch destination is present in this build.
+    status: proposed
+
+  ranger:
+    version: "2.8.0"
+    image: ghcr.io/tagward/ranger-admin          # our own image, built from the Apache release tarball
+    usersync_image: ghcr.io/tagward/ranger-usersync
+    upstream_image_reference: apache/ranger:2.8.0
+    chart: charts/ranger                       # our chart
+    notes: >
+      Trino service definition is included since 2.5.0. OpenSearch audit destination
+      exists; its client-library cleanup (RANGER-5772) is in progress upstream.
+    status: proposed
+
+  openmetadata:
+    version: "1.10.x"
+    image: openmetadata/server
+    ingestion_image: openmetadata/ingestion
+    chart: open-metadata/openmetadata
+    chart_version: TBD
+    notes: >
+      Requires PostgreSQL and OpenSearch. Lineage-based tag propagation is a
+      Collate-only feature; the controller implements propagation instead.
+    status: proposed
+
+  keycloak:
+    version: "26.x"
+    image: quay.io/keycloak/keycloak
+    deploy: keycloak-operator
+    status: proposed
+
+  opensearch:
+    version: "2.x"
+    image: opensearchproject/opensearch
+    chart: opensearch/opensearch
+    notes: One cluster, two index families - OpenMetadata search and Ranger audit.
+    status: proposed
+
+  postgresql:
+    version: "16"
+    image: postgres
+    deploy: cloudnative-pg
+    notes: Three databases - openmetadata, ranger, keycloak. Never Bitnami.
+    status: proposed
+
+  fluent-bit:
+    version: "3.x"
+    image: fluent/fluent-bit
+    notes: Only used by the fallback audit path.
+    status: proposed
+
+  controller:
+    version: 0.1.0-dev
+    image: ghcr.io/tagward/tagward-controller
+    chart: charts/controller
+    java: "21"
+    status: proposed
+
+runtime:
+  kubernetes_min: "1.29"
+  helm_min: "3.14"
+  docker_compose_min: "2.24"

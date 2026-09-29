@@ -1,0 +1,7 @@
+# Default owners for everything in the repository.
+*                       @FrancoisChastel
+
+# Decisions and specifications need explicit maintainer review.
+/docs/adr/              @FrancoisChastel
+/docs/spec/             @FrancoisChastel
+/versions.yaml          @FrancoisChastel

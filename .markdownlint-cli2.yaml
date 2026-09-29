@@ -1,0 +1,10 @@
+config:
+  default: true
+  MD013: false          # line length: prose wraps naturally, tables are wide
+  MD033: false          # inline HTML is allowed for the few diagrams that need it
+  MD041: false          # first line does not have to be a heading in every file
+  MD024:
+    siblings_only: true # repeated headings allowed across sections (ADRs, specs)
+ignores:
+  - node_modules
+  - CODE_OF_CONDUCT.md

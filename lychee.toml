@@ -1,0 +1,4 @@
+# Link checker configuration. Offline: only local links are verified in CI, so
+# an upstream site outage never turns the docs build red.
+offline = true
+exclude_path = ["node_modules", "CODE_OF_CONDUCT.md"]

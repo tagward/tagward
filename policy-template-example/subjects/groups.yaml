@@ -1,0 +1,13 @@
+spec: 1
+kind: Subjects
+subjects:
+  privacy-office:
+    group: data-privacy-office
+  analysts:
+    group: analysts
+  regional-analysts:
+    group: analysts-regional
+  global-analysts:
+    group: analysts-global
+  table-owner:
+    special: owner

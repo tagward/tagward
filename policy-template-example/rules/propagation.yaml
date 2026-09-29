@@ -1,0 +1,15 @@
+spec: 1
+kind: PropagationRules
+defaults:
+  maxDepth: 3
+  direction: downstream
+  stopAtTags: [Governance.Sanitized, Governance.Public]
+  writeAs:
+    labelType: Propagated
+    state: Suggested
+rules:
+  - tags: [PII.*]
+    maxDepth: 5
+declassification:
+  tag: Governance.Sanitized
+  requires: Confirmed

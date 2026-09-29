@@ -1,0 +1,21 @@
+# OS and editors
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Helm
+charts/**/charts/
+charts/**/Chart.lock
+*.tgz
+
+# Compose runtime data
+compose/.data/
+compose/**/*.env
+!compose/**/*.example.env
+
+# Tooling
+node_modules/
+.lycheecache
+__pycache__/

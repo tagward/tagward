@@ -1,0 +1,28 @@
+name: Proposal
+description: A change to the architecture, a specification, the roadmap or the bill of materials.
+labels: [proposal]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What cannot be done today, and who is affected.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What you would change. If it changes the shape of the system, say that an ADR should follow.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: license
+    attributes:
+      label: License check
+      options:
+        - label: Any new component is permissively licensed (Apache 2.0, MIT, BSD, PostgreSQL)

@@ -1,0 +1,29 @@
+spec: 1
+kind: ConformanceTests
+env: demo
+cases:
+  - id: analysts-see-hashed-email
+    as: analysts
+    sql: SELECT email FROM lakehouse.crm.customers LIMIT 1
+    expect:
+      outcome: success
+      column: email
+      matches: "^[0-9a-f]{64}$"
+  - id: privacy-office-sees-clear-email
+    as: privacy-office
+    sql: SELECT email FROM lakehouse.crm.customers LIMIT 1
+    expect:
+      outcome: success
+      column: email
+      matches: "@"
+  - id: everyone-denied-national-id
+    as: everyone
+    sql: SELECT national_id FROM lakehouse.crm.customers LIMIT 1
+    expect:
+      outcome: denied
+      errorContains: "Access Denied"
+  - id: quarantine-blocks-unclassified-column
+    as: analysts
+    sql: SELECT phone_alt FROM lakehouse.crm.customers LIMIT 1
+    expect:
+      outcome: denied

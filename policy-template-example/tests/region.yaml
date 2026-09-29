@@ -1,0 +1,17 @@
+spec: 1
+kind: ConformanceTests
+env: demo
+cases:
+  - id: eu-analyst-sees-eu-only
+    as: regional-analysts
+    user: eu-analyst
+    sql: SELECT DISTINCT region FROM lakehouse.sales.orders
+    expect:
+      outcome: success
+      rows: [["eu"]]
+  - id: global-analyst-sees-all
+    as: global-analysts
+    sql: SELECT count(DISTINCT region) FROM lakehouse.sales.orders
+    expect:
+      outcome: success
+      rows: [[3]]

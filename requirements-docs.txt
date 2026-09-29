@@ -1,0 +1,2 @@
+# Documentation site. Pinned; Dependabot keeps it current.
+mkdocs-material==9.7.7

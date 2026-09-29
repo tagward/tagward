@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Spec 05, primary path: the plugin writes audit directly to OpenSearch. No Solr. -->
+<configuration>
+  <property>
+    <name>xasecure.audit.is.enabled</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>xasecure.audit.destination.opensearch</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>xasecure.audit.destination.opensearch.urls</name>
+    <value>opensearch</value>
+  </property>
+  <property>
+    <name>xasecure.audit.destination.opensearch.port</name>
+    <value>9200</value>
+  </property>
+  <property>
+    <name>xasecure.audit.destination.opensearch.protocol</name>
+    <value>http</value>
+  </property>
+  <property>
+    <name>xasecure.audit.destination.opensearch.index</name>
+    <value>ranger_audits</value>
+  </property>
+  <property>
+    <name>xasecure.audit.destination.opensearch.batch.filespool.enable</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>xasecure.audit.destination.opensearch.batch.filespool.dir</name>
+    <value>/tmp/ranger/audit/spool</value>
+  </property>
+  <property>
+    <name>xasecure.audit.provider.summary.enabled</name>
+    <value>true</value>
+  </property>
+</configuration>

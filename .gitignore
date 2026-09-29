@@ -19,3 +19,7 @@ compose/**/*.env
 node_modules/
 .lycheecache
 __pycache__/
+
+# Generated site
+site/
+docs/roadmap.md

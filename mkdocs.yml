@@ -1,0 +1,104 @@
+site_name: Tagward
+site_description: A tag becomes a ward. Open-source data governance from OpenMetadata classification to enforced Trino queries, through Apache Ranger.
+site_url: https://tagward.github.io/tagward/
+repo_url: https://github.com/tagward/tagward
+repo_name: tagward/tagward
+edit_uri: edit/main/docs/
+copyright: Copyright The Tagward Authors. Apache License 2.0.
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  language: en
+  icon:
+    repo: fontawesome/brands/github
+    logo: material/shield-check-outline
+  favicon: assets/favicon.svg
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: deep orange
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: deep orange
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - Home:
+      - index.md
+      - Getting started: getting-started.md
+      - Architecture blueprint (interactive): blueprint.html
+      - Roadmap: roadmap.md
+      - Glossary: glossary.md
+  - Design:
+      - 01-vision-and-principles.md
+      - 02-architecture.md
+      - 03-bill-of-materials.md
+      - 04-repositories.md
+  - Specifications:
+      - spec/README.md
+      - spec/01-controller.md
+      - spec/02-policy-repository.md
+      - spec/03-ranger-compilation.md
+      - spec/04-identity.md
+      - spec/05-audit.md
+      - spec/06-images.md
+      - spec/07-distribution.md
+      - spec/08-conformance.md
+      - spec/09-security-model.md
+  - Decisions:
+      - adr/README.md
+      - adr/ADR-001-no-atlas.md
+      - adr/ADR-002-ranger-first-opa-second.md
+      - adr/ADR-003-intents-in-git.md
+      - adr/ADR-004-audit-to-opensearch.md
+      - adr/ADR-005-no-gravitino-in-v1.md
+      - adr/ADR-006-compile-and-reconcile.md
+      - adr/ADR-007-controller-in-java.md
+      - adr/ADR-008-own-ranger-images.md
+      - adr/ADR-009-fail-safe-defaults.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/tagward
+      name: Tagward on GitHub

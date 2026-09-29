@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Tagward architecture: from OpenMetadata classification to enforced Trino queries through Apache Ranger.">
+<link rel="icon" href="assets/favicon.svg">
+<style>html{color-scheme:light dark}body{margin:0}img{max-width:100%}</style>
+<title>Tagward architecture blueprint</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: single reading column for prose, full-bleed scrolling strips for the three schematics. */
+  :root {
+    --bg: #f7f6f2;
+    --surface: #ffffff;
+    --fg: #1d1f1b;
+    --muted: #5f635b;
+    --line: #cfd2c9;
+    --band: #eceee6;
+    --accent: #0b6e4f;      /* the component we build */
+    --accent-soft: #d9efe6;
+    --warn: #b4531a;        /* the thing an option adds */
+    --warn-soft: #f6e4d6;
+    --font-body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+    --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17191a; --surface: #1f2224; --fg: #e8e8e3; --muted: #a2a69c; --line: #3d423f; --band: #22262a;
+      --accent: #4fc79c; --accent-soft: #163d31; --warn: #e8905a; --warn-soft: #43281a; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17191a; --surface: #1f2224; --fg: #e8e8e3; --muted: #a2a69c; --line: #3d423f; --band: #22262a;
+    --accent: #4fc79c; --accent-soft: #163d31; --warn: #e8905a; --warn-soft: #43281a; color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.55; margin: 0; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 32px 64px; }
+  header { margin-bottom: 32px; }
+  h1 { font-size: clamp(1.7rem, 3.5vw, 2.4rem); font-weight: 600; line-height: 1.15; margin: 0 0 8px; text-wrap: balance; }
+  .lede { max-width: 68ch; color: var(--muted); margin: 0 0 12px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-family: var(--font-mono); font-size: 12px; letter-spacing: .02em; border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; color: var(--muted); }
+  .chip.ok { border-color: var(--accent); color: var(--accent); }
+  h2 { font-size: 1.25rem; font-weight: 600; margin: 48px 0 12px; text-wrap: balance; }
+  h3 { font-size: 1rem; font-weight: 600; margin: 24px 0 8px; }
+  p { max-width: 68ch; }
+  .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  figure { margin: 16px 0 0; }
+  .strip { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: 12px; }
+  .strip svg { display: block; min-width: 880px; width: 100%; height: auto; color: var(--fg); font-family: var(--font-body); }
+  figcaption { font-size: 14px; color: var(--muted); max-width: 80ch; margin-top: 10px; }
+  svg text { fill: currentColor; }
+  .box { fill: var(--surface); stroke: currentColor; stroke-width: 1.2; }
+  .box.accent { stroke: var(--accent); stroke-width: 2; fill: var(--accent-soft); }
+  .box.warn { stroke: var(--warn); stroke-width: 1.6; fill: var(--warn-soft); }
+  .box.later { stroke-dasharray: 5 4; fill: none; }
+  .sub { fill: var(--bg); stroke: currentColor; stroke-width: 1; }
+  .band { fill: var(--band); stroke: none; }
+  .t { font-size: 13px; font-weight: 600; }
+  .s { font-size: 11px; }
+  .m { font-size: 11px; fill: var(--muted); }
+  .k { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; fill: var(--muted); }
+  .lbl { font-size: 11px; }
+  .lbl.w { fill: var(--warn); font-weight: 600; }
+  .edge { stroke: currentColor; stroke-width: 1.3; fill: none; }
+  .edge.dash { stroke-dasharray: 5 4; }
+  .edge.w { stroke: var(--warn); stroke-width: 1.8; }
+  .edge.a { stroke: var(--accent); stroke-width: 1.8; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; margin-top: 12px; }
+  th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { font-weight: 600; font-size: 13px; color: var(--muted); }
+  td code, p code, li code { font-family: var(--font-mono); font-size: 13px; }
+  .tablewrap { overflow-x: auto; }
+  ol.flows { padding-left: 1.3em; max-width: 78ch; }
+  ol.flows li { margin-bottom: 6px; }
+  ul.tight { padding-left: 1.2em; max-width: 78ch; }
+  ul.tight li { margin-bottom: 6px; }
+  .verdict { border-left: 3px solid var(--accent); padding: 4px 14px; margin: 16px 0; max-width: 72ch; }
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+  .two > div { min-width: 0; }
+  a { color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Schematic architecture · tagward.github.io/tagward</div>
+  <h1>Tagward architecture blueprint</h1>
+  <p class="lede">From a tag in OpenMetadata to a denied, masked or filtered query in Trino, through Apache Ranger, with one controller in the middle and no commercial license anywhere in the stack.</p>
+  <div class="chips">
+    <span class="chip ok">Trino · Apache 2.0</span>
+    <span class="chip ok">Apache Ranger · Apache 2.0</span>
+    <span class="chip ok">OpenMetadata · Apache 2.0</span>
+    <span class="chip ok">Keycloak · Apache 2.0</span>
+    <span class="chip ok">PostgreSQL · OpenSearch</span>
+    <span class="chip">Atlas · replaced</span>
+    <span class="chip">Gravitino · optional, not in v1</span>
+  </div>
+</header>
+
+<h2>1. The whole system</h2>
+<p>Four planes. Intent lives in git and OpenMetadata. The controller compiles intent into Ranger. Ranger's plugin inside Trino enforces at query time. Every arrow is one integration we own or configure.</p>
+
+<figure>
+<div class="strip">
+<svg viewBox="0 0 1180 800" role="img" aria-label="Architecture: git and OpenMetadata feed a Tagward controller, which writes managed tags and policies to Apache Ranger; the Ranger plugin inside Trino polls those policies and enforces deny, mask and row filter on queries; audit flows to OpenSearch and metadata flows back into OpenMetadata.">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+    </marker>
+    <marker id="arrw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#b4531a"></path>
+    </marker>
+  </defs>
+
+  <!-- bands -->
+  <rect class="band" x="20" y="20" width="1150" height="170" rx="4"></rect>
+  <rect class="band" x="20" y="230" width="1150" height="170" rx="4"></rect>
+  <rect class="band" x="20" y="440" width="1150" height="170" rx="4"></rect>
+  <rect class="band" x="20" y="650" width="1150" height="130" rx="4"></rect>
+  <text class="k" x="32" y="38">INTENT · SYSTEMS OF RECORD</text>
+  <text class="k" x="32" y="248">CONTROL · WHAT WE BUILD</text>
+  <text class="k" x="32" y="458">ENFORCEMENT</text>
+  <text class="k" x="32" y="668">DATA</text>
+
+  <!-- intent band -->
+  <rect class="box" x="40" y="50" width="250" height="120" rx="4"></rect>
+  <text class="t" x="52" y="72">Git repository</text>
+  <text class="s" x="52" y="92">policy intents (tag → subjects → effect)</text>
+  <text class="s" x="52" y="108">propagation rules, mask catalog</text>
+  <text class="s" x="52" y="124">subject → group mapping</text>
+  <text class="m" x="52" y="150">JSON Schema validated · reviewed in CI</text>
+
+  <rect class="box" x="340" y="50" width="380" height="120" rx="4"></rect>
+  <text class="t" x="352" y="72">OpenMetadata</text>
+  <text class="s" x="352" y="92">classifications, glossary, owners, column lineage</text>
+  <text class="s" x="352" y="108">tag labels: Manual · Automated · Propagated,  Suggested → Confirmed</text>
+  <text class="s" x="352" y="124">ingestion: Trino connector, OpenLineage (Spark, Flink)</text>
+  <text class="m" x="352" y="150">enforcement status shown as custom properties · PostgreSQL + OpenSearch</text>
+
+  <rect class="box" x="1020" y="50" width="130" height="120" rx="4"></rect>
+  <text class="t" x="1032" y="72">Keycloak</text>
+  <text class="s" x="1032" y="92">OIDC for every UI</text>
+  <text class="s" x="1032" y="108">groups claim in token</text>
+  <text class="s" x="1032" y="124">user attributes</text>
+  <text class="m" x="1032" y="150">one group name space</text>
+
+  <!-- control band -->
+  <rect class="box accent" x="40" y="260" width="880" height="120" rx="4"></rect>
+  <text class="t" x="52" y="282">Tagward controller</text>
+  <text class="m" x="230" y="282">same binary as CLI (plan · apply · test · drift) and as reconcile daemon · stateless, cache only</text>
+  <rect class="sub" x="60" y="300" width="130" height="60" rx="3"></rect>
+  <text class="s" x="125" y="324" text-anchor="middle">Canonical model</text>
+  <text class="m" x="125" y="340" text-anchor="middle">assets · bindings · subjects</text>
+  <rect class="sub" x="202" y="300" width="130" height="60" rx="3"></rect>
+  <text class="s" x="267" y="324" text-anchor="middle">Propagation engine</text>
+  <text class="m" x="267" y="340" text-anchor="middle">lineage closure, stop tags</text>
+  <rect class="sub" x="344" y="300" width="130" height="60" rx="3"></rect>
+  <text class="s" x="409" y="324" text-anchor="middle">Compiler → plan</text>
+  <text class="m" x="409" y="340" text-anchor="middle">Confirmed tags × intents</text>
+  <rect class="sub" x="486" y="300" width="130" height="60" rx="3"></rect>
+  <text class="s" x="551" y="324" text-anchor="middle">Ranger applier</text>
+  <text class="m" x="551" y="340" text-anchor="middle">idempotent, owner-marked</text>
+  <rect class="sub" x="628" y="300" width="130" height="60" rx="3"></rect>
+  <text class="s" x="693" y="324" text-anchor="middle">Status &amp; drift</text>
+  <text class="m" x="693" y="340" text-anchor="middle">intent vs Ranger vs observed</text>
+  <rect class="sub" x="770" y="300" width="130" height="60" rx="3"></rect>
+  <text class="s" x="835" y="324" text-anchor="middle">Conformance tests</text>
+  <text class="m" x="835" y="340" text-anchor="middle">real queries, synthetic users</text>
+
+  <rect class="box" x="1020" y="260" width="130" height="120" rx="4"></rect>
+  <text class="t" x="1032" y="282">Analysts, BI</text>
+  <text class="s" x="1032" y="302">Superset, notebooks,</text>
+  <text class="s" x="1032" y="318">JDBC clients</text>
+  <text class="m" x="1032" y="344">log in once at Keycloak</text>
+
+  <!-- enforcement band -->
+  <rect class="box" x="40" y="470" width="330" height="120" rx="4"></rect>
+  <text class="t" x="52" y="492">Apache Ranger admin</text>
+  <text class="s" x="52" y="512">tag service: tag defs, tags, resource maps</text>
+  <text class="s" x="52" y="528">trino service: access, masking, row-filter policies</text>
+  <text class="s" x="52" y="544">tag policies evaluated before resource policies</text>
+  <text class="m" x="52" y="570">PostgreSQL · SSO + usersync attributes from Keycloak</text>
+
+  <rect class="box" x="470" y="470" width="680" height="120" rx="4"></rect>
+  <text class="t" x="482" y="492">Trino coordinator</text>
+  <rect class="sub" x="490" y="505" width="220" height="70" rx="3"></rect>
+  <text class="s" x="500" y="524">Ranger plugin (SystemAccessControl)</text>
+  <text class="m" x="500" y="540">local policy cache, polls admin</text>
+  <text class="m" x="500" y="556">deny · column mask · row filter</text>
+  <rect class="sub" x="730" y="505" width="200" height="70" rx="3"></rect>
+  <text class="s" x="740" y="524">Events</text>
+  <text class="m" x="740" y="540">query log → lineage, usage</text>
+  <text class="m" x="740" y="556">audit → OpenSearch</text>
+  <rect class="box later" x="950" y="505" width="180" height="70" rx="3"></rect>
+  <text class="s" x="960" y="524">Later: OPA plugin</text>
+  <text class="m" x="960" y="540">purpose and consent rules,</text>
+  <text class="m" x="960" y="556">same compiler, second target</text>
+
+  <!-- data band -->
+  <rect class="box" x="40" y="680" width="330" height="80" rx="4"></rect>
+  <text class="t" x="52" y="702">Audit store</text>
+  <text class="s" x="52" y="722">OpenSearch, the same cluster OpenMetadata searches on</text>
+  <text class="m" x="52" y="742">plugin writes directly, spools locally if down</text>
+
+  <rect class="box" x="470" y="680" width="300" height="80" rx="4"></rect>
+  <text class="t" x="482" y="702">Iceberg tables on object store</text>
+  <text class="s" x="482" y="722">REST catalog: Polaris or Lakekeeper</text>
+  <text class="m" x="482" y="742">later: table grants pushed here too</text>
+
+  <rect class="box" x="800" y="680" width="200" height="80" rx="4"></rect>
+  <text class="t" x="812" y="702">Other sources</text>
+  <text class="s" x="812" y="722">PostgreSQL, Kafka, files</text>
+  <text class="m" x="812" y="742">reached only through Trino</text>
+
+  <rect class="box later" x="1020" y="680" width="130" height="80" rx="4"></rect>
+  <text class="s" x="1030" y="702">Side doors</text>
+  <text class="m" x="1030" y="720">Spark, direct S3</text>
+  <text class="m" x="1030" y="736">visible, not enforced</text>
+  <text class="m" x="1030" y="752">in v1</text>
+
+  <!-- edges: intent -> control -->
+  <line class="edge" x1="165" y1="170" x2="165" y2="258" marker-end="url(#arr)"></line>
+  <text class="lbl" x="172" y="220">reads intents, rules</text>
+  <line class="edge" x1="450" y1="170" x2="450" y2="258" marker-end="url(#arr)"></line>
+  <text class="lbl" x="457" y="220">change events + full resync</text>
+  <line class="edge" x1="640" y1="260" x2="640" y2="172" marker-end="url(#arr)"></line>
+  <text class="lbl" x="647" y="220">writes Suggested tags, status</text>
+
+  <!-- keycloak edges -->
+  <line class="edge" x1="1020" y1="80" x2="722" y2="80" marker-end="url(#arr)"></line>
+  <text class="lbl" x="870" y="72" text-anchor="middle">SSO</text>
+  <line class="edge" x1="1085" y1="170" x2="1085" y2="258" marker-end="url(#arr)"></line>
+  <text class="lbl" x="1092" y="220">token with groups</text>
+
+  <!-- trino -> openmetadata ingestion -->
+  <polyline class="edge" points="945,470 945,150 722,150" marker-end="url(#arr)"></polyline>
+  <text class="lbl" x="840" y="134" text-anchor="middle">ingestion pulls schema,</text>
+  <text class="lbl" x="840" y="146" text-anchor="middle">usage, query-log lineage</text>
+
+  <!-- control -> enforcement -->
+  <line class="edge a" x1="150" y1="380" x2="150" y2="468" marker-end="url(#arr)"></line>
+  <text class="lbl" x="157" y="430">apply plan: tags, maps, policies</text>
+  <line class="edge" x1="330" y1="470" x2="330" y2="382" marker-end="url(#arr)"></line>
+  <text class="lbl" x="337" y="430">read back actual state</text>
+  <line class="edge" x1="835" y1="380" x2="835" y2="468" marker-end="url(#arr)"></line>
+  <text class="lbl" x="842" y="430">test queries</text>
+  <line class="edge" x1="1085" y1="380" x2="1085" y2="468" marker-end="url(#arr)"></line>
+  <text class="lbl" x="1092" y="430">SQL + token</text>
+
+  <!-- ranger <-> trino plugin -->
+  <line class="edge" x1="370" y1="525" x2="488" y2="525" marker-end="url(#arr)"></line>
+  <text class="lbl" x="429" y="517" text-anchor="middle">policies, polled</text>
+  <text class="lbl" x="429" y="547" text-anchor="middle">about every 30 s</text>
+
+  <!-- audit -->
+  <polyline class="edge" points="500,575 500,640 300,640 300,678" marker-end="url(#arr)"></polyline>
+  <text class="lbl" x="400" y="632" text-anchor="middle">audit events</text>
+  <line class="edge" x1="120" y1="680" x2="120" y2="592" marker-end="url(#arr)"></line>
+  <text class="lbl" x="127" y="640">audit UI, reports</text>
+
+  <!-- trino -> data -->
+  <line class="edge" x1="620" y1="590" x2="620" y2="678" marker-end="url(#arr)"></line>
+  <text class="lbl" x="627" y="640">reads</text>
+  <line class="edge" x1="900" y1="590" x2="900" y2="678" marker-end="url(#arr)"></line>
+  <text class="lbl" x="907" y="640">reads</text>
+  <line class="edge dash" x1="1020" y1="720" x2="1002" y2="720" marker-end="url(#arr)"></line>
+</svg>
+</div>
+<figcaption>Figure 1. Nothing is written in two places. Git holds intent, OpenMetadata holds classification and approval, Ranger holds compiled policy, Keycloak holds identity. The controller is the only writer into Ranger and the only writer of Propagated tags into OpenMetadata.</figcaption>
+</figure>
+
+<h3>The numbered flows</h3>
+<ol class="flows">
+  <li><strong>Ingest.</strong> OpenMetadata pulls schema, usage and query-log column lineage from Trino, and OpenLineage events from Spark or Flink. Assets exist in the catalog before anyone classifies them.</li>
+  <li><strong>Classify.</strong> The auto-classifier writes Automated tags in state Suggested. Stewards write Manual tags, which are Confirmed on creation.</li>
+  <li><strong>Propagate.</strong> The controller walks column lineage from every Confirmed sensitive tag and writes Propagated tags in state Suggested, stopping at declassification tags and at the depth the rules allow.</li>
+  <li><strong>Approve.</strong> A human confirms or rejects each Suggested tag in the OpenMetadata UI. Only Confirmed tags reach the compiler.</li>
+  <li><strong>Compile and apply.</strong> Confirmed tags times intents from git produce a plan: Ranger tag definitions, tag-to-resource maps, tag-based access and masking policies, and per-table row-filter policies. The applier writes only objects it owns and removes orphans.</li>
+  <li><strong>Enforce.</strong> The Ranger plugin in the Trino coordinator polls the admin, caches policies, and rewrites or denies each query. Audit goes straight from the plugin to OpenSearch.</li>
+  <li><strong>Verify and feed back.</strong> Conformance tests run real queries as synthetic users. Drift compares intent, Ranger and observed behavior. Status and sensitive-access counts are written back onto each asset in OpenMetadata.</li>
+</ol>
+
+<h2>2. Life of a tag</h2>
+<p>The Atlas features we drop are propagation and the change feed. Both come back as states in this lifecycle, using label types and states that OpenMetadata already has.</p>
+
+<figure>
+<div class="strip">
+<svg viewBox="0 0 1180 250" role="img" aria-label="Tag lifecycle: automated and propagated tags enter as Suggested, manual tags enter as Confirmed, a steward confirms or rejects, the controller compiles Confirmed tags into a managed Ranger policy within seconds, the Trino plugin picks it up on its next poll, and an expiry sends the tag back to review.">
+  <defs>
+    <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+    </marker>
+  </defs>
+  <!-- sources -->
+  <rect class="sub" x="20" y="30" width="180" height="46" rx="3"></rect>
+  <text class="s" x="30" y="49">Auto-classifier</text>
+  <text class="m" x="30" y="65">labelType Automated</text>
+  <rect class="sub" x="20" y="100" width="180" height="46" rx="3"></rect>
+  <text class="s" x="30" y="119">Propagation engine</text>
+  <text class="m" x="30" y="135">labelType Propagated</text>
+  <rect class="sub" x="20" y="170" width="180" height="46" rx="3"></rect>
+  <text class="s" x="30" y="189">Steward tags by hand</text>
+  <text class="m" x="30" y="205">labelType Manual</text>
+
+  <!-- states -->
+  <rect class="box" x="270" y="85" width="150" height="56" rx="4"></rect>
+  <text class="t" x="345" y="108" text-anchor="middle">Suggested</text>
+  <text class="m" x="345" y="126" text-anchor="middle">visible, not enforced</text>
+
+  <rect class="box" x="490" y="85" width="150" height="56" rx="4"></rect>
+  <text class="t" x="565" y="108" text-anchor="middle">Confirmed</text>
+  <text class="m" x="565" y="126" text-anchor="middle">the only compiler input</text>
+
+  <rect class="box accent" x="710" y="85" width="150" height="56" rx="4"></rect>
+  <text class="t" x="785" y="108" text-anchor="middle">Compiled</text>
+  <text class="m" x="785" y="126" text-anchor="middle">managed Ranger objects</text>
+
+  <rect class="box" x="930" y="85" width="150" height="56" rx="4"></rect>
+  <text class="t" x="1005" y="108" text-anchor="middle">Enforced</text>
+  <text class="m" x="1005" y="126" text-anchor="middle">in the plugin cache</text>
+
+  <rect class="box later" x="490" y="180" width="150" height="46" rx="4"></rect>
+  <text class="s" x="565" y="200" text-anchor="middle">Rejected</text>
+  <text class="m" x="565" y="216" text-anchor="middle">kept as evidence</text>
+
+  <!-- edges -->
+  <polyline class="edge" points="200,53 235,53 235,100 268,100" marker-end="url(#arr2)"></polyline>
+  <polyline class="edge" points="200,123 235,123 235,113 268,113" marker-end="url(#arr2)"></polyline>
+  <polyline class="edge" points="200,193 450,193 450,141" marker-end="url(#arr2)"></polyline>
+  <text class="lbl" x="325" y="186" text-anchor="middle">Confirmed on creation</text>
+  <line class="edge" x1="420" y1="113" x2="488" y2="113" marker-end="url(#arr2)"></line>
+  <text class="lbl" x="454" y="78" text-anchor="middle">steward</text>
+  <text class="lbl" x="454" y="104" text-anchor="middle">approves</text>
+  <polyline class="edge dash" points="400,141 400,203 488,203" marker-end="url(#arr2)"></polyline>
+  <text class="lbl" x="392" y="222" text-anchor="end">rejects</text>
+  <line class="edge a" x1="640" y1="113" x2="708" y2="113" marker-end="url(#arr2)"></line>
+  <text class="lbl" x="674" y="78" text-anchor="middle">controller,</text>
+  <text class="lbl" x="674" y="104" text-anchor="middle">seconds</text>
+  <line class="edge" x1="860" y1="113" x2="928" y2="113" marker-end="url(#arr2)"></line>
+  <text class="lbl" x="894" y="78" text-anchor="middle">plugin poll,</text>
+  <text class="lbl" x="894" y="104" text-anchor="middle">under a minute</text>
+  <polyline class="edge dash" points="1005,85 1005,22 345,22 345,83" marker-end="url(#arr2)"></polyline>
+  <text class="lbl" x="675" y="16" text-anchor="middle">review date passes, or upstream column changes: back to Suggested</text>
+</svg>
+</div>
+<figcaption>Figure 2. A false positive from the classifier can never lock anyone out, because nothing is enforced before a human confirms it. A tag that expires is enforced until it is reviewed, then re-suggested, so review lapses fail safe.</figcaption>
+</figure>
+
+<h2>3. Gravitino: what it would change</h2>
+<p>Gravitino is fully open source under Apache 2.0 and a top-level Apache project. The question is not license, it is whether it earns its place in the query path.</p>
+
+<figure>
+<div class="strip">
+<svg viewBox="0 0 1180 300" role="img" aria-label="Comparison: direct wiring has Trino read sources through its own connectors with Ranger as the single policy writer; wiring through Gravitino adds a hop on every query, a fourth metadata store, and a second writer into Ranger.">
+  <defs>
+    <marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+    </marker>
+    <marker id="arr3w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#b4531a"></path>
+    </marker>
+  </defs>
+  <rect class="band" x="20" y="20" width="540" height="260" rx="4"></rect>
+  <rect class="band" x="620" y="20" width="540" height="260" rx="4"></rect>
+  <text class="k" x="32" y="40">A · DIRECT  (RECOMMENDED FOR V1)</text>
+  <text class="k" x="632" y="40">B · THROUGH GRAVITINO</text>
+
+  <!-- A -->
+  <rect class="box" x="40" y="60" width="180" height="50" rx="4"></rect>
+  <text class="t" x="130" y="82" text-anchor="middle">Ranger</text>
+  <text class="m" x="130" y="98" text-anchor="middle">one writer: the controller</text>
+  <rect class="box" x="360" y="60" width="180" height="50" rx="4"></rect>
+  <text class="t" x="450" y="82" text-anchor="middle">OpenMetadata</text>
+  <text class="m" x="450" y="98" text-anchor="middle">ingests from Trino</text>
+  <rect class="box" x="40" y="160" width="180" height="60" rx="4"></rect>
+  <text class="t" x="130" y="185" text-anchor="middle">Trino</text>
+  <text class="m" x="130" y="203" text-anchor="middle">Ranger plugin inside</text>
+  <rect class="box" x="360" y="160" width="180" height="60" rx="4"></rect>
+  <text class="t" x="450" y="185" text-anchor="middle">Sources</text>
+  <text class="m" x="450" y="203" text-anchor="middle">Iceberg REST, PostgreSQL, …</text>
+  <line class="edge" x1="130" y1="110" x2="130" y2="158" marker-end="url(#arr3)"></line>
+  <text class="lbl" x="137" y="138">policies</text>
+  <line class="edge" x1="220" y1="190" x2="358" y2="190" marker-end="url(#arr3)"></line>
+  <text class="lbl" x="289" y="182" text-anchor="middle">native connectors</text>
+  <polyline class="edge" points="220,175 290,175 290,85 358,85" marker-end="url(#arr3)"></polyline>
+  <text class="lbl" x="300" y="130">ingestion</text>
+  <text class="m" x="40" y="258">Three systems. One metadata store. One hop per query.</text>
+
+  <!-- B -->
+  <rect class="box" x="640" y="60" width="150" height="50" rx="4"></rect>
+  <text class="t" x="715" y="82" text-anchor="middle">Ranger</text>
+  <text class="m" x="715" y="98" text-anchor="middle">two writers</text>
+  <rect class="box" x="1000" y="60" width="150" height="50" rx="4"></rect>
+  <text class="t" x="1075" y="82" text-anchor="middle">OpenMetadata</text>
+  <text class="m" x="1075" y="98" text-anchor="middle">ingests from both</text>
+  <rect class="box" x="640" y="160" width="150" height="60" rx="4"></rect>
+  <text class="t" x="715" y="185" text-anchor="middle">Trino</text>
+  <text class="m" x="715" y="203" text-anchor="middle">Gravitino connector</text>
+  <rect class="box warn" x="820" y="160" width="160" height="60" rx="4"></rect>
+  <text class="t" x="900" y="185" text-anchor="middle">Gravitino</text>
+  <text class="m" x="900" y="203" text-anchor="middle">own store, tags, authz</text>
+  <rect class="box" x="1010" y="160" width="140" height="60" rx="4"></rect>
+  <text class="t" x="1080" y="185" text-anchor="middle">Sources</text>
+  <text class="m" x="1080" y="203" text-anchor="middle">same as A</text>
+  <line class="edge" x1="715" y1="110" x2="715" y2="158" marker-end="url(#arr3)"></line>
+  <text class="lbl" x="722" y="138">policies</text>
+  <line class="edge w" x1="790" y1="190" x2="818" y2="190" marker-end="url(#arr3w)"></line>
+  <text class="lbl w" x="804" y="240" text-anchor="middle">added hop, every query</text>
+  <line class="edge" x1="980" y1="190" x2="1008" y2="190" marker-end="url(#arr3)"></line>
+  <polyline class="edge w" points="860,160 860,85 792,85" marker-end="url(#arr3w)"></polyline>
+  <text class="lbl w" x="866" y="128">second policy writer</text>
+  <polyline class="edge" points="940,160 940,85 998,85" marker-end="url(#arr3)"></polyline>
+  <text class="lbl" x="946" y="128">ingestion</text>
+  <text class="m" x="640" y="258">Gain: one catalog definition shared by Trino, Spark and Flink. Cost: a fourth store to reconcile.</text>
+</svg>
+</div>
+<figcaption>Figure 3. Option B is right when several engines must see identical catalogs and you want Gravitino's own grants. Option A is right when Trino is the enforcement door, which is the premise of this product. The canonical model stays engine-agnostic so B can be added as an asset source later without redesign.</figcaption>
+</figure>
+
+<div class="verdict">
+<strong>Verdict on Gravitino.</strong> Not in the first release. It solves catalog federation across engines, not classification-driven policy, and its Ranger authorization plugin still carries documented limitations and a Trino session-user forwarding issue. Adopt it later as an optional asset source, and possibly as a second enforcement target, once multi-engine consistency becomes a requirement.
+</div>
+
+<h2>4. Who owns which fact</h2>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Fact</th><th>System of record</th><th>Who may write it</th><th>Where it is displayed</th></tr></thead>
+  <tbody>
+    <tr><td>Asset exists, its schema</td><td>The source system, mirrored by OpenMetadata ingestion</td><td>Ingestion only</td><td>OpenMetadata</td></tr>
+    <tr><td>Classification of an asset</td><td>OpenMetadata tag labels</td><td>Classifier, controller (Propagated), stewards</td><td>OpenMetadata</td></tr>
+    <tr><td>Approval of a classification</td><td>OpenMetadata tag state</td><td>Stewards only</td><td>OpenMetadata</td></tr>
+    <tr><td>Policy intent, propagation rules, masks</td><td>Git</td><td>Pull request with CI plan and tests</td><td>OpenMetadata custom properties, git</td></tr>
+    <tr><td>Compiled policy</td><td>Ranger, managed objects</td><td>Controller only</td><td>Ranger admin</td></tr>
+    <tr><td>Hand-written Ranger policy</td><td>Ranger, unmanaged objects</td><td>Ranger admins</td><td>Ranger admin, flagged in drift report</td></tr>
+    <tr><td>People, groups, attributes</td><td>Keycloak</td><td>Identity team</td><td>Trino token, Ranger usersync</td></tr>
+    <tr><td>Access audit</td><td>OpenSearch audit index</td><td>Ranger plugin in Trino</td><td>Ranger admin, counts on the asset in OpenMetadata</td></tr>
+    <tr><td>Enforcement status per asset</td><td>Derived by the controller</td><td>Controller only</td><td>OpenMetadata custom properties</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>5. Milestones</h2>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Release</th><th>Delivers</th><th>Proves</th></tr></thead>
+  <tbody>
+    <tr><td>M1</td><td>Controller CLI, Ranger applier, table deny and column masking from Confirmed PII tags, quarantine of new columns, conformance suite, status write-back, compose and Helm install</td><td>A tag in the catalog changes a query result in Trino, with a test that proves it</td></tr>
+    <tr><td>M2</td><td>Propagation engine over column lineage, declassification, review dates, daemon mode with webhooks</td><td>Atlas parity without Atlas</td></tr>
+    <tr><td>M3</td><td>Row filters from user attributes, drift detection, audit feedback into OpenMetadata from the OpenSearch index</td><td>Region and department scoping, and continuous evidence of enforcement</td></tr>
+    <tr><td>M4</td><td>OPA as second compiler target, table grants into Polaris or Lakekeeper, Gravitino as optional asset source</td><td>Purpose-based access and the first side door closed</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>6. Decisions still open</h2>
+<ul class="tight">
+  <li><strong>Tag attributes in git, not in OpenMetadata.</strong> OpenMetadata tags are flat labels, so expiry, owner group and mask choice are keyed by tag name in the intent files, with per-asset overrides as custom properties.</li>
+  <li><strong>No controller UI.</strong> OpenMetadata is the front door, Ranger admin is the operator console, the controller exposes a CLI and a status endpoint.</li>
+  <li><strong>Controller language.</strong> Java stays close to the Ranger and Trino client libraries. Go gives one portable binary. Leaning Java for M1.</li>
+  <li><strong>Quarantine default.</strong> A new column on a table that carries any sensitive tag is denied to everyone but the owner group until classified. Strict, and the only default that fails safe.</li>
+</ul>
+</div>
+
+<p style="max-width:1180px;margin:24px auto;padding:0 16px;font-size:13px;color:var(--muted)">Back to the <a href="index.html">Tagward documentation</a>. Source: <a href="https://github.com/tagward/tagward/blob/main/docs/blueprint.html">docs/blueprint.html</a>.</p>
+</body>
+</html>

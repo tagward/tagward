@@ -32,11 +32,11 @@ docker compose ps
 ```
 
 | Service | URL | Credentials |
-|---|---|---|
-| Trino | http://localhost:8080 | header `X-Trino-User`, no password in M0 |
-| Ranger admin | http://localhost:6080 | `admin` / value of `RANGER_ADMIN_PASSWORD` |
-| OpenMetadata | http://localhost:8585 | `admin@open-metadata.org` / `admin` |
-| Keycloak | http://localhost:8180 | `admin` / value of `KEYCLOAK_ADMIN_PASSWORD` |
+| --- | --- | --- |
+| Trino | <http://localhost:8080> | header `X-Trino-User`, no password in M0 |
+| Ranger admin | <http://localhost:6080> | `admin` / value of `RANGER_ADMIN_PASSWORD` |
+| OpenMetadata | <http://localhost:8585> | `admin@open-metadata.org` / `admin` |
+| Keycloak | <http://localhost:8180> | `admin` / value of `KEYCLOAK_ADMIN_PASSWORD` |
 
 ## Profiles
 

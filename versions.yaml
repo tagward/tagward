@@ -72,12 +72,6 @@ components:
     notes: Ships the Trino plugin's audit files to OpenSearch (ADR-010).
     status: proposed
 
-  curl:
-    version: "8.22.0"
-    image: curlimages/curl
-    notes: Init container that installs the OpenSearch index template.
-    status: proposed
-
   controller:
     version: 0.1.0-dev
     image: ghcr.io/tagward/tagward-controller

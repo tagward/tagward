@@ -42,14 +42,19 @@ services:
       retries: 30
 
   opensearch-init:
-    image: curlimages/curl:${CURL_VERSION:-8.22.0}
+    # Installs the ranger_audits index template before Ranger admin or Fluent Bit start.
+    # Same image as OpenSearch: it has bash and curl, and it is already pulled.
+    image: opensearchproject/opensearch:${OPENSEARCH_VERSION:-2.19.6}
     depends_on:
       opensearch: { condition: service_healthy }
     volumes:
       - ./config/opensearch/ranger-audits-template.json:/template.json:ro
-    command: >
-      sh -c 'curl -sf -X PUT http://opensearch:9200/_index_template/ranger_audits
-             -H "Content-Type: application/json" --data-binary @/template.json'
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - >
+        curl -sf -X PUT http://opensearch:9200/_index_template/ranger_audits
+        -H "Content-Type: application/json" --data-binary @/template.json
+        && echo "ranger_audits template installed"
     restart: "no"
 
   keycloak:

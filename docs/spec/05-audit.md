@@ -8,7 +8,7 @@ Trino coordinator. No Solr, no ZooKeeper. ADR-004.
 Verified against the upstream sources of the pinned versions (ADR-010):
 
 | Fact | Source |
-|---|---|
+| --- | --- |
 | Trino 483 bundles Ranger 2.8.0 client libraries | `plugin/trino-ranger/pom.xml` at tag 483 |
 | Those libraries ship Elasticsearch, HDFS, log4j, Solr, Kafka and CloudWatch destinations, no OpenSearch destination | `agents-audit/pom.xml` at `release-ranger-2.8.0` and `release-ranger-2.9.0` |
 | Ranger admin reads audits from OpenSearch from 2.9.0 | `security-admin/scripts/setup.sh`, `audit_store=opensearch` and `ranger.audit.opensearch.*` |
@@ -20,7 +20,7 @@ Verified against the upstream sources of the pinned versions (ADR-010):
 Trino side, `ranger-trino-audit.xml` mounted by the chart and by compose:
 
 | Property | Value |
-|---|---|
+| --- | --- |
 | `xasecure.audit.is.enabled` | `true` |
 | `xasecure.audit.destination.hdfs` | `true` |
 | `xasecure.audit.destination.hdfs.dir` | `file:///var/log/ranger/audit` |

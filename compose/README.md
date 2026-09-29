@@ -13,7 +13,7 @@ labelled `milestone:M0`.
 Facts established by reading the sources, so nobody rediscovers them:
 
 | Fact | Consequence here |
-|---|---|
+| --- | --- |
 | Ranger admin accepts `audit_store=opensearch` only from 2.9.0 | `RANGER_VERSION=2.9.0` |
 | The upstream image's entrypoint runs `setup.sh` against `/opt/ranger/admin/install.properties`, then creates dev services for hosts that do not exist | our `install.properties` is mounted there and a minimal entrypoint replaces the upstream one |
 | Trino 483 bundles Ranger 2.8.0 with no OpenSearch audit destination | the plugin writes JSON files through the HDFS destination on `file://`, Fluent Bit ships them (ADR-010) |

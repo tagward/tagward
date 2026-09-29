@@ -1,4 +1,4 @@
-.PHONY: lint lint-md lint-yaml lint-links check-versions
+.PHONY: lint lint-md lint-yaml lint-links check-versions site serve
 
 lint: lint-md lint-yaml lint-links check-versions
 
@@ -13,3 +13,9 @@ lint-links:
 
 check-versions:
 	python3 scripts/check_versions.py versions.yaml
+
+site:
+	python3 scripts/sync_docs.py && mkdocs build --strict
+
+serve:
+	python3 scripts/sync_docs.py && mkdocs serve

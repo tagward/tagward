@@ -1,0 +1,38 @@
+{
+  "index_patterns": ["ranger_audits*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    },
+    "mappings": {
+      "properties": {
+        "evtTime": { "type": "date" },
+        "reqUser": { "type": "keyword" },
+        "access": { "type": "keyword" },
+        "resource": { "type": "keyword" },
+        "resType": { "type": "keyword" },
+        "result": { "type": "integer" },
+        "policy": { "type": "long" },
+        "policyVersion": { "type": "long" },
+        "enforcer": { "type": "keyword" },
+        "repo": { "type": "keyword" },
+        "repoType": { "type": "integer" },
+        "cliIP": { "type": "ip" },
+        "reqData": { "type": "text", "index": false },
+        "tags": { "type": "keyword" },
+        "cluster_name": { "type": "keyword" },
+        "zoneName": { "type": "keyword" },
+        "agentHost": { "type": "keyword" },
+        "event_count": { "type": "long" },
+        "event_dur_ms": { "type": "long" },
+        "action": { "type": "keyword" },
+        "sess": { "type": "keyword" },
+        "agent": { "type": "keyword" },
+        "id": { "type": "keyword" },
+        "seq_num": { "type": "long" },
+        "datatype": { "type": "keyword" }
+      }
+    }
+  }
+}

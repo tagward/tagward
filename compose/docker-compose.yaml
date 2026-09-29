@@ -1,0 +1,154 @@
+# Tagward laptop stack, M0. Spec 07.
+#
+#   cp .env.example .env
+#   docker compose up -d
+#
+# Status: NOT YET VERIFIED. This file was written against the upstream images'
+# documentation and has not been run end to end. The M0 issues in the master
+# repository track the verification. Expect the Ranger service in particular to
+# need work: the upstream image is a developer image (ADR-008).
+
+name: tagward
+
+services:
+  postgres:
+    image: postgres:${POSTGRES_VERSION:-16}
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - ./config/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  opensearch:
+    image: opensearchproject/opensearch:${OPENSEARCH_VERSION:-2.19.2}
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: "true"     # laptop only; the chart enables it
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+      OPENSEARCH_JAVA_OPTS: -Xms1g -Xmx1g
+      bootstrap.memory_lock: "true"
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  opensearch-init:
+    image: curlimages/curl:8.12.1
+    depends_on:
+      opensearch: { condition: service_healthy }
+    volumes:
+      - ./config/opensearch/ranger-audits-template.json:/template.json:ro
+    command: >
+      sh -c 'curl -sf -X PUT http://opensearch:9200/_index_template/ranger_audits
+             -H "Content-Type: application/json" --data-binary @/template.json'
+    restart: "no"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:${KEYCLOAK_VERSION:-26.3}
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak}
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME: http://localhost:8180
+    ports:
+      - "8180:8080"
+    volumes:
+      - ./config/keycloak/realm-data.json:/opt/keycloak/data/import/realm-data.json:ro
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  openmetadata-migrate:
+    image: openmetadata/server:${OPENMETADATA_VERSION:-1.9.7}
+    command: ["./bootstrap/openmetadata-ops.sh", "migrate"]
+    environment: &om-env
+      DB_DRIVER_CLASS: org.postgresql.Driver
+      DB_SCHEME: postgresql
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      OM_DATABASE: openmetadata
+      DB_USER: openmetadata
+      DB_USER_PASSWORD: ${OM_DB_PASSWORD:-openmetadata}
+      SEARCH_TYPE: opensearch
+      ELASTICSEARCH_HOST: opensearch
+      ELASTICSEARCH_PORT: "9200"
+      ELASTICSEARCH_SCHEME: http
+      AUTHORIZER_CLASS_NAME: org.openmetadata.service.security.DefaultAuthorizer
+      AUTHORIZER_REQUEST_FILTER: org.openmetadata.service.security.JwtFilter
+      AUTHENTICATION_PROVIDER: basic       # Keycloak SSO arrives with M1 (Spec 04)
+    depends_on:
+      postgres: { condition: service_healthy }
+      opensearch: { condition: service_healthy }
+    restart: "no"
+
+  openmetadata:
+    image: openmetadata/server:${OPENMETADATA_VERSION:-1.9.7}
+    environment:
+      <<: *om-env
+      SERVER_PORT: "8585"
+      SERVER_ADMIN_PORT: "8586"
+    ports:
+      - "8585:8585"
+    depends_on:
+      openmetadata-migrate: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8586/healthcheck || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 40
+
+  ranger-admin:
+    # Upstream developer image, used only until images/ranger-admin exists (ADR-008).
+    image: apache/ranger:${RANGER_VERSION:-2.8.0}
+    hostname: ranger-admin
+    environment:
+      RANGER_VERSION: ${RANGER_VERSION:-2.8.0}
+    volumes:
+      - ./config/ranger/install.properties:/home/ranger/dist/ranger-admin-install.properties:ro
+    ports:
+      - "6080:6080"
+    depends_on:
+      postgres: { condition: service_healthy }
+      opensearch: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:6080/login.jsp || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 40
+
+  trino:
+    image: trinodb/trino:${TRINO_VERSION:-483}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config/trino/config.properties:/etc/trino/config.properties:ro
+      - ./config/trino/access-control.properties:/etc/trino/access-control.properties:ro
+      - ./config/trino/catalog/tpch.properties:/etc/trino/catalog/tpch.properties:ro
+      - ./config/trino/ranger:/etc/trino/ranger:ro
+      - trino-ranger:/tmp/ranger
+    depends_on:
+      ranger-admin: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/v1/info | grep -q '\"starting\":false'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  postgres-data:
+  opensearch-data:
+  trino-ranger:

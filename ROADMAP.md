@@ -7,6 +7,9 @@ Each milestone has acceptance criteria that are tests, not descriptions.
 - [x] Vision, architecture, decisions, specifications written
 - [x] Name chosen, GitHub organisation and three repositories created
 - [x] Three repositories created, this one as master
+- [x] Documentation site published from this repository with GitHub Pages
+- [x] Controller validates policy repositories (`tagward validate`), image on GHCR
+- [x] Compose `default` profile written, verification pending (issues labelled `milestone:M0`)
 - [ ] `versions.yaml` first pins
 - [ ] Compose `default` profile brings up PostgreSQL, OpenSearch, Keycloak,
       OpenMetadata, Ranger admin (our image), Trino with the Ranger plugin

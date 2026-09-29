@@ -1,0 +1,72 @@
+{
+  "realm": "data",
+  "enabled": true,
+  "displayName": "Tagward demo",
+  "groups": [
+    { "name": "data-privacy-office" },
+    { "name": "analysts" },
+    { "name": "analysts-regional" },
+    { "name": "analysts-global" },
+    { "name": "data-platform-admins" }
+  ],
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true,
+      "firstName": "Alice",
+      "lastName": "Analyst",
+      "email": "alice@example.internal",
+      "credentials": [{ "type": "password", "value": "alice", "temporary": false }],
+      "groups": ["/analysts"]
+    },
+    {
+      "username": "priya",
+      "enabled": true,
+      "firstName": "Priya",
+      "lastName": "Privacy",
+      "email": "priya@example.internal",
+      "credentials": [{ "type": "password", "value": "priya", "temporary": false }],
+      "groups": ["/data-privacy-office"]
+    },
+    {
+      "username": "eu-analyst",
+      "enabled": true,
+      "firstName": "Eve",
+      "lastName": "Europe",
+      "email": "eu-analyst@example.internal",
+      "attributes": { "region": ["eu"] },
+      "credentials": [{ "type": "password", "value": "eu-analyst", "temporary": false }],
+      "groups": ["/analysts-regional"]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "trino",
+      "name": "Trino",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "trino-dev-secret",
+      "standardFlowEnabled": true,
+      "redirectUris": ["http://localhost:8080/oauth2/callback"],
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "config": { "claim.name": "groups", "full.path": "false", "id.token.claim": "true", "access.token.claim": "true" }
+        }
+      ]
+    },
+    {
+      "clientId": "conformance",
+      "name": "Tagward conformance runner",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "conformance-dev-secret",
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": false
+    }
+  ]
+}

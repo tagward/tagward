@@ -2,7 +2,8 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Docs](https://github.com/tagward/tagward/actions/workflows/docs.yml/badge.svg)](https://github.com/tagward/tagward/actions/workflows/docs.yml)
-[![Status](https://img.shields.io/badge/status-specification-orange.svg)](ROADMAP.md)
+[![Pages](https://github.com/tagward/tagward/actions/workflows/pages.yml/badge.svg)](https://tagward.github.io/tagward/)
+[![Status](https://img.shields.io/badge/status-first%20iteration-orange.svg)](ROADMAP.md)
 
 **A tag becomes a ward.** Tagward is an all open-source, fully packaged data
 governance stack: a classification confirmed in OpenMetadata becomes an enforced
@@ -15,9 +16,12 @@ OpenMetadata (classify, approve)  ──►  Tagward controller (compile, reconc
         └──────── status, propagated tags ◄───────────┘                       audit ─► OpenSearch ◄────────┘
 ```
 
-> **Status: specification phase.** The architecture, decisions and specifications
-> are written. The first milestone, a compose stack that proves the audit path
-> without Solr, is next. See [ROADMAP.md](ROADMAP.md).
+> **Documentation site: [tagward.github.io/tagward](https://tagward.github.io/tagward/)**
+>
+> **Status: first iteration.** The architecture, decisions and specifications are
+> written and the controller validates policy repositories. The compose stack that
+> proves the enforcement and audit path without Solr is being verified, tracked in
+> the [M0 issues](https://github.com/tagward/tagward/issues?q=is%3Aissue+label%3Amilestone%3AM0). See [ROADMAP.md](ROADMAP.md).
 
 ## Why
 
@@ -42,7 +46,8 @@ the laptop demo. Releases of Tagward are releases of this repository.
 | Roadmap with acceptance criteria | [`ROADMAP.md`](ROADMAP.md) |
 | Helm charts: umbrella, Ranger, controller | [`charts/`](charts/) |
 | Container images we build: Ranger admin and usersync | [`images/`](images/) |
-| One-command laptop demo | [`compose/`](compose/) |
+| One-command laptop demo, being verified | [`compose/`](compose/) |
+| Documentation site sources, MkDocs Material | [`mkdocs.yml`](mkdocs.yml), [`docs/`](docs/) |
 | A rendered example of a policy repository | [`policy-template-example/`](policy-template-example/) |
 
 Two sibling repositories complete the project:
